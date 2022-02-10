@@ -14,6 +14,8 @@ target: dhcp-server
 # Base image to run the binary in.
 baseimage: $MAYHEM_DOCKER_REGISTRY/nathan/connman:latest
 
+advanced_triage: true
+
 # List of commands used to test the target
 cmds:
 
@@ -40,4 +42,3 @@ cmds:
     ## that length will be truncated. Be very careful about increasing this
     ## limit as it can severely affect your fuzzer performance.
     # max_length: 8192
-
