@@ -6,5 +6,5 @@ docker build -t $image -f mayhem/Dockerfile .
 docker push $image
 popd
 
-mayhem validate .
+#mayhem validate .
 mayhem run .

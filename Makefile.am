@@ -101,7 +101,7 @@ noinst_PROGRAMS =
 bin_PROGRAMS = mayhem/fuzz_dhcp
 
 mayhem_fuzz_dhcp_SOURCES = $(gdhcp_sources) mayhem/fuzz_dhcp.c
-mayhem_fuzz_dhcp_LDADD = @GLIB_LIBS@
+mayhem_fuzz_dhcp_LDADD = @GLIB_LIBS@ -ldl
 
 unit_objects =
 
