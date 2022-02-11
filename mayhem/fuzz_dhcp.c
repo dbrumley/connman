@@ -74,9 +74,7 @@ ssize_t read(int fd, void *buf, size_t count)
 
     if (dhcp_fd == fd) {
         result = real_read(payload_fd, buf, count);
-        if (result < count) {
-            payload_delivered = 1;
-        }
+        payload_delivered = 1;
     } else {
         result = real_read(fd, buf, count);
     }

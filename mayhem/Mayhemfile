@@ -6,10 +6,10 @@
 version: '1.16'
 
 # Namespaced project name that the target belongs to
-project: nathan/connman
+project: connman
 
 # Target name (should be unique within the project)
-target: dhcp-server-fileredir
+target: dhcp-server-onepkt-msan-asan
 
 # Base image to run the binary in.
 baseimage: $MAYHEM_DOCKER_REGISTRY/nathan/connman:latest
@@ -18,9 +18,14 @@ baseimage: $MAYHEM_DOCKER_REGISTRY/nathan/connman:latest
 cmds:
 
   - cmd: /fuzz_dhcp_uninst @@
+    max_length: 8192
 
   - cmd: /fuzz_dhcp_asan @@
     sanitizer: true
     disable_mayhem_fuzz: true
+    max_length: 8192
 
-
+  - cmd: /fuzz_dhcp_msan @@
+    sanitizer: true
+    disable_mayhem_fuzz: true
+    max_length: 8192
