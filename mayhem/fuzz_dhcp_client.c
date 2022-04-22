@@ -1,0 +1,128 @@
+#define _GNU_SOURCE
+#include <assert.h>
+#include <errno.h>
+#include <stdio.h>
+
+#include <dlfcn.h>
+
+#include <fcntl.h>
+#include <poll.h>
+
+#include <netinet/if_ether.h>
+
+#include "gdhcp/gdhcp.h"
+
+static int payload_delivered = 0;
+static int payload_fd = -1;
+
+static int raw_socket_fd = -1;
+
+int socket(int domain, int type, int protocol)
+{
+    static int (*real_socket)(int, int, int) = NULL;
+
+    // if the program requests a raw socket, return a fake fd
+    if (PF_PACKET == domain && htons(ETH_P_IP) == protocol) {
+        return open("/dev/null", O_RDONLY);
+    }
+
+    // otherwise, just do the regular socket call
+    if (NULL == real_socket) {
+        real_socket = dlsym(RTLD_NEXT, "socket");
+    }
+    return real_socket(domain, type, protocol);
+}
+
+int bind(int sockfd, const struct sockaddr *addr, socklen_t addrlen)
+{
+    /*static int (*real_bind)(int, const struct sockaddr *, socklen_t) = NULL;
+
+    if (NULL == real_bind) {
+        real_bind = dlsym(RTLD_NEXT, "bind");
+        assert(real_bind);
+    }
+    return real_bind(sockfd, addr, addrlen); */
+
+    /* this is really hacky */
+    if (-1 == raw_socket_fd) {
+        raw_socket_fd = sockfd;
+    }
+    return 0;
+}
+
+int poll(struct pollfd *fds, nfds_t nfds, int timeout)
+{
+    int i = -1;
+    int res = 0;
+
+    /*if (NULL == real_poll) {
+        real_poll = dlsym(RTLD_NEXT, "poll");
+        assert(real_poll);
+    }*/
+
+    if (payload_delivered) {
+        fprintf(stderr, "payload delivered, goodbye\n");
+        exit(0);
+    }
+
+    for (i = 0; i < nfds; i++) {
+        if (raw_socket_fd == fds[i].fd) {
+            fds[i].revents = fds[i].events;
+            res = 1;
+        } else {
+            fds[i].events = 0;
+        }
+    }
+
+    return res;
+}
+
+static ssize_t (*real_read)(int fd, void *buf, size_t count) = NULL;
+
+ssize_t read(int fd, void *buf, size_t count)
+{
+    int result = -1;
+
+    if (NULL == real_read) {
+        real_read = dlsym(RTLD_NEXT, "read");
+        assert(real_read);
+    }
+
+    if (raw_socket_fd == fd) {
+        result = real_read(payload_fd, buf, count);
+        payload_delivered = 1;
+    } else {
+        result = real_read(fd, buf, count);
+    }
+
+    return result;
+}
+
+int main(int argc, char **argv)
+{
+    GDHCPClientError err;
+    GMainLoop *main_loop = NULL;
+
+    if (2 > argc) {
+        printf("usage: %s PAYLOAD\n", argv[0]);
+        return 1;
+    }
+
+    payload_fd = open(argv[1], O_RDONLY);
+    if (-1 == payload_fd) {
+        fprintf(stderr, "could not open file: %s\n", strerror(errno));
+        return 2;
+    }
+
+    GDHCPClient *client = g_dhcp_client_new(G_DHCP_IPV4, 1, &err);
+
+    assert(client);
+    assert(G_DHCP_CLIENT_ERROR_NONE == err);
+
+    g_dhcp_client_start(client, NULL);
+
+    main_loop = g_main_loop_new(NULL, FALSE);
+    g_main_loop_run(main_loop);
+
+    return 0;
+}
