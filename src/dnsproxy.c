@@ -3981,46 +3981,19 @@ void __connman_dnsproxy_cleanup(void)
 		g_resolv_unref(ipv6_resolve);
 }
 
-int LLVMFuzzerTestOneInput(const uint8_t *Data, size_t Size) {
-    if (Size < 40) return 0;
+int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size)
+{
+    /* I think we want to replicate what udp_server_event does here.
+     * Specifically, the recv buffer size is fixed to 4096. */
+	unsigned char buf[4096];
 
-    int protocol;
+    size_t len = size > sizeof(buf) ? sizeof(buf) : size;
 
-    if ((*Data) % 2) {
-        protocol = IPPROTO_UDP;
-    } else {
-        protocol = IPPROTO_TCP;
-    }
+    memcpy(buf, data, len);
 
-    Data++;
-    Size--;
-
-    int len = Size;
-    unsigned char *buf = malloc(len);
-    if (buf == NULL) return 0;
-
-    memcpy(buf, Data, len);
-
-	int offset = protocol_offset(protocol);
-	int header_len = offset + sizeof(struct domain_hdr);
-	char *ptr = (char *)buf + header_len;
-
-	*ptr = 4;
-	strcpy(ptr + 1, "aaaa.bbbb.com");
-
-    struct server_data *server = create_server(0, "gonzo", "127.0.0.1", protocol);
-    if (server == NULL) {
-        printf("failed to create server\n");
-        fflush(stdout);
-        int *x = NULL;
-        *x = 1234;
-        return 0;
-    }
-
-    forward_dns_reply(buf, len, protocol, server);
-
-    destroy_server(server);
-    free(buf);
-
+	if (len >= 12)
+		forward_dns_reply(buf, len, IPPROTO_UDP, data);
+    
     return 0;
 }
+

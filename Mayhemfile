@@ -1,0 +1,16 @@
+# Project name that the target belongs to
+project: connman
+
+# Target name (should be unique within the project)
+target: dnsproxy-libfuzzer-nate-test
+
+# Base image to run the binary in.
+image: ghcr.io/nathanjackson/connman-dnsproxy-libfuzzer:nate
+
+# List of commands used to test the target
+cmds:
+
+  # Command used to start the target, "@@" is the input file
+  # (when "@@" is omitted Mayhem defaults to stdin inputs)
+  - cmd: /connmand
+
