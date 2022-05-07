@@ -8,20 +8,9 @@ WORKDIR /connman-src
 RUN rm -rf build && mkdir build
 RUN ./bootstrap && \
     cd build/ && \
-    CC=clang CFLAGS='-fsanitize=memory' LDFLAGS='-fsanitize=memory' ../configure --enable-debug --disable-dependency-tracking && \
+    CC=clang CFLAGS='-fsanitize=address,undefined' LDFLAGS='-fsanitize=address,undefined' ../configure --enable-debug --disable-dependency-tracking && \
     make -j $(grep -c ^processor /proc/cpuinfo) && \
-    cp mayhem/fuzz_dhcp /fuzz_dhcp_msan
-WORKDIR /
-RUN rm -rf /connman-src
-
-ADD . /connman-src
-WORKDIR /connman-src
-RUN rm -rf build && mkdir build
-RUN ./bootstrap && \
-    cd build/ && \
-    CC=clang CFLAGS='-fsanitize=address' LDFLAGS='-fsanitize=address' ../configure --enable-debug --disable-dependency-tracking && \
-    make -j $(grep -c ^processor /proc/cpuinfo) && \
-    cp mayhem/fuzz_dhcp /fuzz_dhcp_asan
+    cp mayhem/fuzz_dhcp_client /fuzz_dhcp_client_san
 WORKDIR /
 RUN rm -rf /connman-src
 
@@ -32,14 +21,13 @@ RUN ./bootstrap && \
     cd build/ && \
     CC=clang ../configure --enable-debug --disable-dependency-tracking && \
     make -j $(grep -c ^processor /proc/cpuinfo) && \
-    cp mayhem/fuzz_dhcp /fuzz_dhcp_uninst
+    cp mayhem/fuzz_dhcp_client /fuzz_dhcp_client_uninst
 
 FROM ubuntu:20.04
 
 RUN apt-get update && \
-    DEBIAN_FRONTEND=noninteractive apt-get install -y libglib2.0-0 && \
+    DEBIAN_FRONTEND=noninteractive apt-get install -y libglib2.0-0 libc6-dbg && \
     rm -rf /var/lib/apt/lists/*
 
-COPY --from=builder /fuzz_dhcp_msan /
-COPY --from=builder /fuzz_dhcp_asan /
-COPY --from=builder /fuzz_dhcp_uninst /
+COPY --from=builder /fuzz_dhcp_client_san /
+COPY --from=builder /fuzz_dhcp_client_uninst /

@@ -98,6 +98,19 @@ ssize_t read(int fd, void *buf, size_t count)
     return result;
 }
 
+void debug_func(const char *str, gpointer data)
+{
+    fprintf(stderr, "DEBUG: %s\n", str);
+}
+
+ssize_t sendto(int sockfd, const void *buf, size_t len, int flags,
+               const struct sockaddr *dest_addr, socklen_t addrlen)
+{
+    // dont actually send anything, just return success
+    debug_func("in sendto", NULL);
+    return (ssize_t)len;
+}
+
 int main(int argc, char **argv)
 {
     GDHCPClientError err;
@@ -115,13 +128,19 @@ int main(int argc, char **argv)
     }
 
     GDHCPClient *client = g_dhcp_client_new(G_DHCP_IPV4, 1, &err);
+    debug_func("client created", NULL);
 
     assert(client);
     assert(G_DHCP_CLIENT_ERROR_NONE == err);
 
+    g_dhcp_client_set_debug(client, &debug_func, NULL);
+    debug_func("debug func set",NULL);
+
     g_dhcp_client_start(client, NULL);
+    debug_func("client started", NULL);
 
     main_loop = g_main_loop_new(NULL, FALSE);
+    debug_func("main loop created", NULL);
     g_main_loop_run(main_loop);
 
     return 0;
