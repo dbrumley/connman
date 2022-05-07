@@ -1340,8 +1340,8 @@ static int dhcp_recv_l2_packet(struct dhcp_packet *dhcp_pkt, int fd,
 
 	check = packet.ip.check;
 	packet.ip.check = 0;
-	/*if (check != dhcp_checksum(&packet.ip, sizeof(packet.ip)))
-		return -1; */
+	if (check != dhcp_checksum(&packet.ip, sizeof(packet.ip)))
+		return -1;
 
 	/* verify UDP checksum. IP header has to be modified for this */
 	memset(&packet.ip, 0, offsetof(struct iphdr, protocol));
@@ -1349,8 +1349,8 @@ static int dhcp_recv_l2_packet(struct dhcp_packet *dhcp_pkt, int fd,
 	packet.ip.tot_len = packet.udp.len; /* yes, this is needed */
 	check = packet.udp.check;
 	packet.udp.check = 0;
-	/*if (check && check != dhcp_checksum(&packet, bytes))
-		return -1;*/
+	if (check && check != dhcp_checksum(&packet, bytes))
+		return -1;
 
 	memcpy(dhcp_pkt, &packet.data, bytes - (sizeof(packet.ip) +
 							sizeof(packet.udp)));
