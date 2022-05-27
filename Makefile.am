@@ -106,7 +106,13 @@ builtin_libadd =
 builtin_cflags =
 
 noinst_PROGRAMS =
-bin_PROGRAMS =
+bin_PROGRAMS = mayhem/fuzz_dhcp_server mayhem/dhcp_client/fuzz_dhcp_client
+
+mayhem_fuzz_dhcp_server_SOURCES = $(gdhcp_sources) $(shared_sources) mayhem/fuzz_dhcp_server.c src/util.c src/inet.c src/log.c src/backtrace.c
+mayhem_fuzz_dhcp_server_LDADD = @GLIB_LIBS@ -ldl
+
+mayhem_dhcp_client_fuzz_dhcp_client_SOURCES = $(gdhcp_sources) $(shared_sources) mayhem/dhcp_client/fuzz_dhcp_client.c src/util.c src/inet.c src/log.c src/backtrace.c
+mayhem_dhcp_client_fuzz_dhcp_client_LDADD = @GLIB_LIBS@ -ldl
 
 unit_objects =
 
