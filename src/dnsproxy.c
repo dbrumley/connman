@@ -1947,7 +1947,11 @@ static int forward_dns_reply(unsigned char *reply, int reply_len, int protocol,
 
 	debug("Received %d bytes (id 0x%04x)", reply_len, dns_id);
 
-	req = find_request(dns_id);
+	struct request_data _req;
+	memset(&_req, 0, sizeof(_req));
+	_req.append_domain = true;
+
+	req = &_req;
 	if (!req)
 		return -EINVAL;
 
@@ -2009,7 +2013,7 @@ static int forward_dns_reply(unsigned char *reply, int reply_len, int protocol,
 					dns_class != ns_c_in) {
 				debug("Pass msg dns type %d class %d",
 					dns_type, dns_class);
-				goto pass;
+				// goto pass;
 			}
 
 			/*
@@ -2121,17 +2125,17 @@ static int forward_dns_reply(unsigned char *reply, int reply_len, int protocol,
 		}
 
 	pass:
-		g_free(req->resp);
-		req->resplen = 0;
+		// g_free(req->resp);
+		// req->resplen = 0;
 
-		req->resp = g_try_malloc(reply_len);
-		if (!req->resp)
-			return -ENOMEM;
+		// req->resp = g_try_malloc(reply_len);
+		// if (!req->resp)
+		// 	return -ENOMEM;
 
-		memcpy(req->resp, reply, reply_len);
-		req->resplen = reply_len;
+		// memcpy(req->resp, reply, reply_len);
+		// req->resplen = reply_len;
 
-		cache_update(data, reply, reply_len);
+		// cache_update(data, reply, reply_len);
 
 		g_free(new_reply);
 	}
@@ -2145,28 +2149,28 @@ out:
 		}
 	}
 
-	request_list = g_slist_remove(request_list, req);
+	// request_list = g_slist_remove(request_list, req);
 
-	if (protocol == IPPROTO_UDP) {
-		sk = get_req_udp_socket(req);
-		if (sk < 0) {
-			errno = -EIO;
-			err = -EIO;
-		} else
-			err = sendto(sk, req->resp, req->resplen, 0,
-				&req->sa, req->sa_len);
-	} else {
-		sk = req->client_sk;
-		err = send(sk, req->resp, req->resplen, MSG_NOSIGNAL);
-	}
+	// if (protocol == IPPROTO_UDP) {
+	// 	sk = get_req_udp_socket(req);
+	// 	if (sk < 0) {
+	// 		errno = -EIO;
+	// 		err = -EIO;
+	// 	} else
+	// 		err = sendto(sk, req->resp, req->resplen, 0,
+	// 			&req->sa, req->sa_len);
+	// } else {
+	// 	sk = req->client_sk;
+	// 	err = send(sk, req->resp, req->resplen, MSG_NOSIGNAL);
+	// }
 
-	if (err < 0)
-		debug("Cannot send msg, sk %d proto %d errno %d/%s", sk,
-			protocol, errno, strerror(errno));
-	else
-		debug("proto %d sent %d bytes to %d", protocol, err, sk);
+	// if (err < 0)
+	// 	debug("Cannot send msg, sk %d proto %d errno %d/%s", sk,
+	// 		protocol, errno, strerror(errno));
+	// else
+	// 	debug("proto %d sent %d bytes to %d", protocol, err, sk);
 
-	destroy_request_data(req);
+	// destroy_request_data(req);
 
 	return err;
 }
@@ -3976,3 +3980,20 @@ void __connman_dnsproxy_cleanup(void)
 	if (ipv6_resolve)
 		g_resolv_unref(ipv6_resolve);
 }
+
+int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size)
+{
+    /* I think we want to replicate what udp_server_event does here.
+     * Specifically, the recv buffer size is fixed to 4096. */
+	unsigned char buf[4096];
+
+    size_t len = size > sizeof(buf) ? sizeof(buf) : size;
+
+    memcpy(buf, data, len);
+
+	if (len >= 12)
+		forward_dns_reply(buf, len, IPPROTO_UDP, data);
+    
+    return 0;
+}
+

@@ -742,6 +742,7 @@ unsigned int connman_timeout_browser_launch(void)
 	return connman_settings.timeout_browserlaunch;
 }
 
+#ifndef FUZZ
 int main(int argc, char *argv[])
 {
 	GOptionContext *context;
@@ -925,3 +926,4 @@ int main(int argc, char *argv[])
 
 	return 0;
 }
+#endif /* FUZZ */
