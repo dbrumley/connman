@@ -12,5 +12,5 @@ docker build -t $image -f mayhem/dhcp_client/Dockerfile .
 docker push $image
 cd -
 
-mayhem init --advanced-triage true --project connman --target dhcp-client --cmd '/fuzz_dhcp_client @@' $image
+mayhem init --advanced-triage true --project connman --target dhcp-client --cmd '/fuzz_dhcp_client_uninst @@' $image
 mayhem run .
